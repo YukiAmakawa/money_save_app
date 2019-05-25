@@ -19,9 +19,7 @@
                 </tr>
             </tbody>
         </table>
-        <div>今週の節約金額<span>{{}}円</span></div>
-        <div>今週のご褒美予定<span>{{}}円</span></div>
-        <button @click="getThisWeekTotal()">total</button>
+        <div class="calender-total"><div>今週の節約金額</div><div class="calender-total-price">{{this.weekTotal}}円</div></div>
 </div>
 
 </template>
@@ -35,13 +33,13 @@ export default {
         return {
             calDate: { year: 0, month: 0 },
             weeks: ['日','月','火','水','木','金','土'],
-            items: ['0', '0', '0', '0', '0', '0', '0', '0', '0', '0','0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0','0',]
+            items: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            weekTotal: 0
         }
     },
     methods: {
         getSelectedMonthItemData(){
-        let paddingMonth = String("0" + this.calDate.month).slice(-2);
-        let selectedYearMonth = String(this.calDate.year) + paddingMonth
+        let selectedYearMonth = String(this.calDate.year) + String("0" + this.calDate.month)
             db.collection('date').orderBy('date').startAt(selectedYearMonth).endAt(selectedYearMonth + '\uf8ff').get()
                 //データあり
                 .then(snapshot => {
@@ -52,7 +50,7 @@ export default {
                     })
                     //データなし
                     } else {
-                    this.items = ['0', '0', '0', '0', '0', '0', '0', '0', '0', '0','0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0','0']}
+                    this.items = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
                 }).catch(function(error){
                 console.log("Error getting document", error);
             })
@@ -69,8 +67,8 @@ export default {
             this.calDate.month--
         }
         //firestoreのdocument取得のため選択した月をYYYYMMに直す
-        let paddingMonth =String("0" + this.calDate.month).slice(-2);
-        let selectedYearMonth = String(this.calDate.year) + paddingMonth
+        let selectedYearMonth = String(this.calDate.year) + String(this.calDate.month)
+        
             this.getSelectedMonthItemData();
         },
         moveNextMonth(){
@@ -82,39 +80,37 @@ export default {
             }
         //firestoreのdocument取得のため選択した月をYYYYMMに直す
             this.getSelectedMonthItemData();
-        },
-        getThisWeekTotal(){
-        let today = moment().format('YYYY-MM-DD');
-        let whichWeek = moment(today).day();
-        let weekTotal = 0;
-        if (whichWeek == 3){
-            let todayday = moment().format('D');
-            console.log(todayday);
-            let weekTotal = Number(this.items[todayday-3]) 
-                        + Number(this.items[todayday-2])
-                        + Number(this.items[todayday-1])
-                        + Number(this.items[todayday])
-                        + Number(this.items[todayday+1])
-                        + Number(this.items[todayday+2])
-                        + Number(this.items[todayday+3])
-         console.log(weekTotal);                     
-        }
-  
         }
     },
     created: function(){
-        let thisMonth = moment().format("MM");
-        let thisYear = moment().format("YYYY");
-        this.calDate.year = thisYear;
-        this.calDate.month = thisMonth;
+        this.calDate.year = moment().format("YYYY");
+        this.calDate.month = moment().format("MM");
         //firestoreから今月のデータ取得
-        let thisYearMonth = thisYear + thisMonth
+        let thisYearMonth = this.calDate.year + this.calDate.month
         db.collection('date').orderBy('date').startAt(thisYearMonth).endAt(thisYearMonth + '\uf8ff').get()
         .then(snapshot => {
             let data = snapshot.forEach(doc => {
                 let day = (doc.data().date).slice(-2)
                 this.items.splice(day, 1, doc.data().total)
             })
+        let today = moment().format('YYYY-MM-DD');
+        let whichWeek = moment(today).day();
+        let whichDay = Number(moment().format('D'));
+        // 初期化
+        let weekTotal = 0;
+        let beforeDayTotal = 0;
+        let afterDayTotal = 0;
+        // 今週の節約額の合計額
+        let howManyTimesMinus = whichWeek + 1;
+        for(let i = 1; i < howManyTimesMinus ; i++){
+            beforeDayTotal += this.items[whichDay-i]
+        }
+        let howManyTimesPlus = 7 - whichWeek;
+        for(let i = 1; i < howManyTimesPlus; i++){
+            afterDayTotal += this.items[whichDay+i]
+        }
+        this.weekTotal = beforeDayTotal + this.items[whichDay] + afterDayTotal; 
+
       }).catch(function(error){
         console.log("Error getting document", error);
       })
@@ -182,6 +178,16 @@ export default {
 }
 .calender-date {
     border-bottom: solid 2px #EEE;
+}
+.calender-total {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+}
+.calender-total-price {
+    margin-right: 30px;
+    font-size: 24px;
+    font-weight: bold;
 }
 .table td {
     text-align: center;

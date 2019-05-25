@@ -1,10 +1,6 @@
 <template>
 <div>
   <div class="fixed">
-    <!-- <div class="comment-pig">
-      <img class="pig" src="../assets/animal_buta.png" alt="">
-      <img class="shibafu" src="../assets/line_shibafu.png" alt="">
-    </div> -->
     <div class="total-box">
       <p class="total-comment">今日の達成額</p>
       <div class="total-amount">
@@ -103,7 +99,6 @@ export default {
               newObj[i] = false
               itemArray.push(newObj);
             }
-
             db.collection('date').doc(today).set({
             date: today,
             item: itemArray,
@@ -114,7 +109,7 @@ export default {
          console.log("Error getting document", error);
         })
   })
-}
+},
 }
 </script>
 
